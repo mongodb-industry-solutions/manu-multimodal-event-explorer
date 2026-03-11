@@ -2,7 +2,7 @@
 name = "your-virtual-env"
 version = "0.1.0"
 description = "Your Description"
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "Humza", email = "you@example.com"}]
 requires-python = ">=3.13,<3.14"
 dependencies = [
     "pymongo>=4.10.1",

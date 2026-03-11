@@ -122,7 +122,7 @@ run_kingfisher_scan() {
     local kingfisher_exit_code
     
     # Run kingfisher and capture output
-    if kingfisher_output=$(kingfisher scan . --exclude node_modules --exclude .git --exclude dist --exclude build 2>&1); then
+    if kingfisher_output=$(kingfisher scan . --exclude node_modules --exclude .git --exclude dist --exclude build --exclude .venv 2>&1); then
         kingfisher_exit_code=0
     else
         kingfisher_exit_code=$?

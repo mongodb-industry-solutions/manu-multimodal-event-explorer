@@ -1,80 +1,89 @@
-# Demo Template: Python Backend with Next.js Frontend
+# Multimodal Event Explorer
 
-This repository provides a template for creating a web application with a Python backend and a Next.js frontend. The backend is managed using uv for dependency management, while the frontend is built with Next.js, offering a modern React-based user interface.
+A MongoDB-powered demo that lets you explore a dataset of autonomous driving events through natural language search and a conversational AI agent. Users can search by scene description, filter by weather, season, or time of day, and interact with a ReAct-based AI agent backed by AWS Bedrock (Claude 3) that reasons over the database in real time.
 
-## Table of Contents
+## Where MongoDB Shines?
 
-- [Demo Template: Python Backend with Next.js Frontend](#demo-template-python-backend-with-nextjs-frontend)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Prerequisites](#prerequisites)
-  - [Getting Started](#getting-started)
-    - [Create a New Repository](#create-a-new-repository)
-    - [GitHub Desktop Setup](#github-desktop-setup)
-    - [Backend Setup](#backend-setup)
-  - [DEMO README](#demo-readme)
+- **Atlas Vector Search with Scalar Quantization** — image embeddings (1024-dim, Voyage AI) are stored as `float32` in documents and compressed to `int8` at the index layer, reducing memory footprint by ~75% with ~99% recall preserved.
+- **Hybrid Search via `$rankFusion`** — combines vector search and full-text Atlas Search with Reciprocal Rank Fusion in a single aggregation pipeline, no application-side merging needed.
+- **`$facet` aggregations** — the AI agent uses a single `$facet` pipeline to compute weather, season, and time-of-day distributions across the entire collection in one round-trip.
+- **Flexible document model** — each event stores raw image bytes, a text description, metadata fields, and a vector embedding in one document, eliminating joins.
 
-## Features
+## High Level Architecture
 
-- Python backend with a RESTful API powered by [FastAPI](https://fastapi.tiangolo.com/)
-- Next.js frontend for a responsive user interface
-- Dependency management with uv ([More info](https://docs.astral.sh/uv/))
-- Easy setup and configuration
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Browser                             │
+│  Next.js 15 (App Router)  ·  LeafyGreen UI                  │
+│  SearchBar · ResultsGrid · ChatPanel (SSE streaming)        │
+└───────────────────────┬─────────────────────────────────────┘
+                        │ HTTP / SSE
+┌───────────────────────▼─────────────────────────────────────┐
+│                    FastAPI Backend                           │
+│  /api/search  (hybrid search · reranker)                    │
+│  /api/chat/stream  (ReAct agent · SSE)                      │
+│  /api/chat/approve (Human-in-the-Loop)                      │
+│  /api/tools   (tool discovery registry)                     │
+└──────┬────────────────┬──────────────────┬──────────────────┘
+       │                │                  │
+┌──────▼──────┐  ┌──────▼──────┐  ┌───────▼───────┐
+│  MongoDB    │  │  AWS Bedrock│  │   Voyage AI   │
+│  Atlas      │  │  Claude 3   │  │  Embeddings + │
+│  (Vector +  │  │  (LLM +     │  │  Reranker     │
+│  Text Search│  │   Agent)    │  │               │
+└─────────────┘  └─────────────┘  └───────────────┘
+```
+
+## Tech Stack
+
+- [Next.js 15](https://nextjs.org/docs/app) (App Router) for the frontend
+- [MongoDB Atlas](https://www.mongodb.com/atlas/database) — Vector Search, Atlas Search, aggregations
+- [FastAPI](https://fastapi.tiangolo.com/) for the Python backend
+- [AWS Bedrock](https://aws.amazon.com/bedrock/) — Claude 3 Haiku for the AI agent
+- [Voyage AI](https://www.voyageai.com/) — `voyage-multimodal-3` for embeddings, `rerank-2` for reranking
+- [uv](https://docs.astral.sh/uv/) for Python dependency management
+- [LeafyGreen UI](https://www.mongodb.design/) for MongoDB-branded React components
 
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 
-- Python >=3.13,<3.14 - If you are Mac user, you can install Python 3.13 using this [link](https://www.python.org/downloads/).
+- Python 3.13 (but less than 3.14)
 - Node.js 22 or higher
 - uv (install via [uv's official documentation](https://docs.astral.sh/uv/getting-started/installation/))
+- A [MongoDB Atlas](https://www.mongodb.com/atlas) cluster with the ADAS collection loaded and Vector Search + Atlas Search indexes created
+- A [Voyage AI](https://www.voyageai.com/) API key
+- AWS credentials configured locally with access to Bedrock (Claude 3 Haiku)
 
-## Getting Started
+## Run it Locally
 
-Follow these steps to set up the project locally.
+### Backend
 
-### Create a New Repository
+1. Copy the example environment file and fill in your credentials:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+   Edit `backend/.env` with your values:
+   ```env
+   MONGODB_URI=<your-atlas-connection-string>
+   DATABASE_NAME=multimodal_explorer
+   VOYAGE_API_KEY=<your-voyage-ai-key>
+   AWS_REGION=us-east-1
+   AWS_PROFILE=<your-aws-sso-profile>   # omit if using instance role / IRSA
+   ```
 
-1. Navigate to the repository template on GitHub and click on **Use this template**.
-2. Create a new repository.
-3. **Do not** check the "Include all branches" option.
-4. Define a repository name following the naming convention: `<industry>-<project_name>-<highlighted_feature>`. For example, `fsi-leafybank-ai-personal-assistant` (use hyphens to separate words).
-   - The **industry** and **project name** are required; you can be creative with the highlighted feature.
-5. Provide a clear description for the repository, such as: "A repository template to easily create new demos by following the same structure."
-6. Set the visibility to **Internal**.
-7. Click **Create repository**.
-
-### GitHub Desktop Setup
-
-1. Install GitHub Desktop if you haven't already. You can download it from [GitHub Desktop's official website](https://desktop.github.com/).
-2. Open GitHub Desktop and sign in to your GitHub account.
-3. Clone the newly created repository:
-   - Click on **File** > **Clone Repository**.
-   - Select your repository from the list and click **Clone**.
-4. Create your first branch:
-   - In the GitHub Desktop interface, click on the **Current Branch** dropdown.
-   - Select **New Branch** and name it `feature/branch01`.
-   - Click **Create Branch**.
-
-### Backend Setup
-
-1. (Optional) Set your project description and author information in the `pyproject.toml` file:
-   ```toml
-   description = "Your Description"
-   authors = ["Your Name <you@example.com>"]
-2. Open the project in your preferred IDE (the standard for the team is Visual Studio Code).
-3. Open the Terminal within Visual Studio Code.
-4. Ensure you are in the root project directory where the `makefile` is located.
-5. Execute the following commands:
-  - uv initialization
-    ````bash
-    make uv_init
-    ````
-  - uv sync
-    ````bash
-    make uv_sync
-    ````
-6. Verify that the `.venv` folder has been generated within the `/backend` directory.
+2. Open the project in your preferred IDE (Visual Studio Code recommended).
+3. Open the terminal and ensure you are in the root project directory where the `makefile` is located.
+4. Install Python dependencies:
+   - uv initialization
+     ```bash
+     make uv_init
+     ```
+   - uv sync
+     ```bash
+     make uv_sync
+     ```
+5. Verify that the `.venv` folder has been generated within the `/backend` directory.
 
 ### Running Backend Locally
 
@@ -90,64 +99,57 @@ After setting up the backend dependencies, you can run the development server:
    uv run uvicorn main:app --host 0.0.0.0 --port 8000
    ```
 
-3. The backend API will be accessible at http://localhost:8000
+3. The backend API will be accessible at http://localhost:8000. You can verify it is running at http://localhost:8000/docs (Swagger UI).
 
 **Note**: If port 8000 is already in use (e.g., by Docker containers), either stop the containers with `make clean` or use a different port like `--port 8001`.
 
-### Frontend Setup
+### Frontend
 
-1. Navigate to the `frontend` folder.
-2. Install dependencies by running:
-```bash
-npm install
-```
-3. Start the frontend development server with:
-````bash
-npm run dev
-````
-4. The frontend will now be accessible at http://localhost:3000 by default, providing a user interface.
+1. Copy the example environment file:
+   ```bash
+   cp frontend/EXAMPLE.env frontend/.env.local
+   ```
+   The default value points to the local backend — no changes needed for local development:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000
+   ```
 
-### Git Hooks Setup (Recommended)
+2. Navigate to the `frontend` folder and install dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
 
-This repository includes a pre-commit hook that automatically scans for secrets and credentials before each commit, preventing accidental exposure of sensitive data.
+3. Start the frontend development server:
+   ```bash
+   npm run dev
+   ```
 
-**Setup (run once after cloning):**
+4. The frontend will be accessible at http://localhost:3000.
 
-```bash
-chmod +x setup-hooks.sh
-./setup-hooks.sh
-```
+## Run with Docker
 
-This configures Git to use the `.githooks` directory and enables the pre-commit security scanner.
+Make sure to run this from the root directory. The Docker Compose setup mounts your local AWS credentials so the backend can reach Bedrock without static keys.
 
-**What it does:**
+1. Build and start both containers:
+   ```bash
+   make build
+   ```
+2. To stop and remove the containers and images:
+   ```bash
+   make clean
+   ```
 
-- Runs `security_check.sh` before every commit
-- Scans staged files for potential secrets (API keys, passwords, tokens, etc.)
-- Blocks the commit if security issues are detected
+## Common errors
 
-**If a commit is blocked:**
+### Backend
 
-1. Review the security issues listed in the output
-2. Remove or properly secure the flagged credentials
-3. Re-stage your changes and commit again
+- **Missing `.env` file** — copy `backend/.env.example` to `backend/.env` and fill in all required values (`MONGODB_URI`, `VOYAGE_API_KEY`, AWS config).
+- **AWS auth errors** — ensure your AWS SSO session is active (`aws sso login --profile <profile>`) or that the machine has an IAM role with Bedrock access.
+- **MongoDB connection refused** — confirm your Atlas cluster IP allowlist includes your current IP address (or `0.0.0.0/0` for development).
+- **Vector search index not found** — the Atlas Vector Search and Atlas Search indexes must be created before running the app. Refer to the index definitions in `backend/services/mongodb_service.py`.
 
-**Bypass (not recommended):**
+### Frontend
 
-```bash
-git commit --no-verify
-```
-
-### Kanopy Deployment
-
-For deploying your demo to Kanopy (MongoDB's internal Kubernetes platform), see the [KANOPY_DEPLOYMENT_README.md](KANOPY_DEPLOYMENT_README.md) for detailed instructions on:
-
-- Setting up Drone CI/CD pipeline
-- Configuring Kubernetes secrets
-- Choosing between separate pods vs multi-container deployments
-- Environment variables and secrets configuration
-- Resource management and troubleshooting
-
-## DEMO README
-
-<h1 style="color:red">REPLACE THE CONTENT OF THIS README WITH `README-demo.md` and DELETE THE `README-demo.md` FILE!!!!!!!!! </h1>
+- **`NEXT_PUBLIC_API_URL` not set** — copy `frontend/EXAMPLE.env` to `frontend/.env.local`. Without this the frontend cannot reach the backend.
+- **CORS errors in browser** — ensure the `ORIGINS` variable in `backend/.env` includes `http://localhost:3000`.

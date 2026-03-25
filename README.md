@@ -67,7 +67,7 @@ Before you begin, ensure you have met the following requirements:
    ```env
    MONGODB_URI=<your-atlas-connection-string>
    DATABASE_NAME=multimodal_explorer
-   VOYAGE_API_KEY=<your-voyage-ai-key>
+   VOYAGE_API_KEY=...
    AWS_REGION=us-east-1
    AWS_PROFILE=<your-aws-sso-profile>   # omit if using instance role / IRSA
    ```

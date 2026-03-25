@@ -121,8 +121,26 @@ run_kingfisher_scan() {
     local kingfisher_output
     local kingfisher_exit_code
     
-    # Run kingfisher and capture output
-    if kingfisher_output=$(kingfisher scan . --exclude node_modules --exclude .git --exclude dist --exclude build --exclude .venv --exclude .env 2>&1); then
+    # Ensure we're inside a git repo before relying on git ls-files
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        KINGFISHER_ISSUES=1
+        echo -e "${RED}❌ Not inside a Git repository — cannot determine tracked files for Kingfisher scan.${NC}"
+        echo -e "   ${YELLOW}⚠️  Initialize a Git repo (git init) or run this script from within one.${NC}\n"
+        return 1
+    fi
+
+    # Only scan git-tracked files so .gitignore is automatically respected
+    # Use --git-history none since we're passing individual files
+    if [ -z "$(git ls-files 2>/dev/null)" ]; then
+        echo -e "${GREEN}✅ No tracked files to scan with Kingfisher${NC}"
+        echo ""
+        return 0
+    fi
+
+    # Run kingfisher on only git-tracked files, using NUL-delimited paths
+    # to handle filenames with spaces/special chars, and -- to prevent
+    # filenames starting with - from being interpreted as options
+    if kingfisher_output=$(git ls-files -z 2>/dev/null | xargs -0 kingfisher scan --git-history none -- 2>&1); then
         kingfisher_exit_code=0
     else
         kingfisher_exit_code=$?
@@ -213,7 +231,12 @@ while IFS= read -r file; do
     if [[ "$file" == *"$SCRIPT_RELATIVE" ]] || [[ "$file" == "$SCRIPT_PATH" ]]; then
         continue
     fi
-    
+
+    # Skip example/template env files — they intentionally contain placeholder values
+    if [[ "$file" == *".env.example" ]] || [[ "$file" == *"EXAMPLE.env" ]]; then
+        continue
+    fi
+
     # Check if file is ignored by git (.gitignore)
     if git check-ignore -q "$file" 2>/dev/null; then
         # File is ignored, skip it (e.g., .env files, knowledge_base_kanopy/)
@@ -271,8 +294,12 @@ if [ -n "$FILES_WITH_ISSUES" ]; then
         done
     else
         # Count occurrences
-        mongodb_count=$(grep -c -E "$MONGODB_PATTERN" "$file" 2>/dev/null || echo "0")
-        api_key_count=$(grep -c -E "$API_KEY_PATTERN" "$file" 2>/dev/null || echo "0")
+        # Note: grep -c exits with code 1 when 0 matches are found (not an error).
+        # Using "|| var=0" captures the already-correct count while suppressing the
+        # non-zero exit code so set -e doesn't abort the script and so we don't get
+        # a doubled "0\n0" value from "|| echo 0" running after grep already output "0".
+        mongodb_count=$(grep -c -E "$MONGODB_PATTERN" "$file" 2>/dev/null) || mongodb_count=0
+        api_key_count=$(grep -c -E "$API_KEY_PATTERN" "$file" 2>/dev/null) || api_key_count=0
         total_count=$((mongodb_count + api_key_count))
         
         if [ "$mongodb_count" -gt 0 ] && [ "$api_key_count" -gt 0 ]; then
@@ -349,4 +376,3 @@ else
     echo -e "${GREEN}✅ All security checks passed!${NC}"
 fi
 exit 0
-

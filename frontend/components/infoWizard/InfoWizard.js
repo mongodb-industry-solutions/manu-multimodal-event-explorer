@@ -32,7 +32,7 @@ const InfoWizard = ({
         <div className="overflow-y-auto h-[500px]">
           <Tabs
             aria-label="info wizard tabs"
-            setSelected={setSelected}
+            onChange={setSelected}
             selected={selected}
           >
             {sections.map((tab, tabIndex) => (

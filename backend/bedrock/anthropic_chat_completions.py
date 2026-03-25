@@ -76,8 +76,8 @@ class BedrockAnthropicChatCompletions(BedrockClient):
 
         except (ClientError, Exception) as e:
             self.log.error(
-                f"ERROR: Can't invoke '{self.text_model}'. Reason: {e}")
-            exit(1)
+                f"ERROR: Can't invoke '{self.model_id}'. Reason: {e}")
+            raise
 
         # Decode the response body.
         model_response = json.loads(response["body"].read())
@@ -86,3 +86,20 @@ class BedrockAnthropicChatCompletions(BedrockClient):
         response_text = model_response["content"][0]["text"]
 
         return response_text
+
+    def invoke(self, request: dict) -> dict:
+        """Invoke Bedrock with a full request dict (supports tools, system, etc.).
+
+        Args:
+            request (dict): Full Anthropic-format request payload.
+
+        Returns:
+            dict: Parsed response body from Bedrock.
+        """
+        try:
+            response = self.bedrock_client.invoke_model(
+                modelId=self.model_id, body=json.dumps(request))
+            return json.loads(response["body"].read())
+        except (ClientError, Exception) as e:
+            self.log.error(f"ERROR: Can't invoke '{self.model_id}'. Reason: {e}")
+            raise

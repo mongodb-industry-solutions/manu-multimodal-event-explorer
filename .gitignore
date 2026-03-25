@@ -238,3 +238,12 @@ frontend/next-env.d.ts
 
 # Misc
 *.pem
+
+# ===== MULTIMODAL EVENT EXPLORER =====
+# Downloaded images from HuggingFace datasets (large, regeneratable)
+backend/data/images/
+!backend/data/images/.gitkeep
+
+# HuggingFace cache
+.cache/huggingface/
+~/.cache/huggingface/

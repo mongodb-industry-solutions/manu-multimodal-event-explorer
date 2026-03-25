@@ -3,8 +3,8 @@ import { Providers } from "./providers";
 
 // TODO: Update metadata with actual demo details
 export const metadata = {
-  title: "Demo Template",
-  description: "Industry Solutions Demo Template for NextJS",
+  title: "Multimodal Event Explorer",
+  description: "MongoDB-powered multimodal search for autonomous driving and industrial scenarios"
 };
 
 export default function RootLayout({ children }) {

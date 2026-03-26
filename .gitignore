@@ -247,3 +247,7 @@ backend/data/images/
 # HuggingFace cache
 .cache/huggingface/
 ~/.cache/huggingface/
+
+
+
+.DS_Store

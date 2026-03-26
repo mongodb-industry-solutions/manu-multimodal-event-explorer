@@ -23,6 +23,94 @@ A MongoDB-powered demo that lets you explore a dataset of autonomous driving eve
 - [uv](https://docs.astral.sh/uv/) for Python dependency management
 - [LeafyGreen UI](https://www.mongodb.design/) for MongoDB-branded React components
 
+## Dataset
+
+The demo requires image data in MongoDB before it can run searches or chat with the agent. You have two options.
+
+---
+
+### Option 1 — Use the MIST dataset (recommended)
+
+The demo was built and tested against the **MIST Autonomous Driving Dataset** on HuggingFace:
+
+> 🤗 [jongwonryu/MIST-autonomous-driving-dataset](https://huggingface.co/datasets/jongwonryu/MIST-autonomous-driving-dataset)
+
+The dataset contains dashcam frames labelled with driving conditions (season, weather, time of day). The full dataset is ~73 GB, but **you do not need to download it all**. The ingestion pipeline uses HuggingFace streaming and a diversity-gating mechanism to pull only the images you need.
+
+**Run the pipeline from the `backend/` directory:**
+
+```bash
+# Recommended — 1 000 diverse images (streams ~1–2 GB, takes ~15–30 min)
+uv run python services/ingestion_pipeline.py --sample-size 1000
+
+# Lightweight smoke-test — 100 images
+uv run python services/ingestion_pipeline.py --sample-size 100
+```
+
+The pipeline will:
+1. Stream images from HuggingFace (no full download required)
+2. Apply diversity gating — caps each weather/season/time-of-day combination so you get a balanced sample across conditions
+3. Save images locally to `backend/data/images/adas/`
+4. Generate multimodal embeddings via Voyage AI (`voyage-multimodal-3`)
+5. Insert documents and create Vector Search + Atlas Search indexes in MongoDB
+
+**Optional — preview which conditions will be sampled before touching any images:**
+
+```bash
+uv run python check_diversity.py
+```
+
+This loads only the `text` column (no images) and prints a breakdown of conditions, so you can verify variety before running the full pipeline.
+
+---
+
+### Option 2 — Bring your own dataset
+
+You can adapt the pipeline to any HuggingFace image dataset that has at least one image column and optionally a text/caption column.
+
+**Step 1 — Point the loader at your dataset**
+
+Edit `backend/services/dataset_loader.py`, change the default `dataset_id`:
+
+```python
+class DatasetLoader:
+    def __init__(
+        self,
+        dataset_id: str = "your-org/your-dataset",   # ← change this
+        ...
+    ):
+```
+
+Or pass it at runtime (edit `IngestionPipeline.__init__` to forward a `dataset_id` argument).
+
+**Step 2 — Adapt the metadata extraction**
+
+The normalizer (`backend/services/event_normalizer.py`) scans text fields for known keywords:
+
+```python
+SEASONS      = ["spring", "summer", "fall", "winter", "autumn"]
+TIMES_OF_DAY = ["dawn", "day", "dusk", "night", "daytime"]
+WEATHER_CONDITIONS = ["clear", "cloudy", "rainy", "foggy", "snowy", "overcast"]
+```
+
+If your dataset uses different labels, update these lists and the `parse_metadata_from_text` method. If your dataset has no text labels at all, the fallback logic will assign metadata deterministically from the source index — the demo will still work, but search filters will reflect synthetic labels.
+
+**Step 3 — Run the pipeline**
+
+```bash
+uv run python services/ingestion_pipeline.py --sample-size 500
+```
+
+**Minimum requirements for a custom dataset:**
+
+| Requirement | Details |
+|---|---|
+| At least one image column | Any PIL-compatible image (JPEG, PNG, etc.) |
+| HuggingFace `datasets` compatible | Public dataset or private with `HF_TOKEN` set |
+| Text / caption column (optional) | Used for full-text search and metadata extraction; falls back to synthetic labels if absent |
+
+---
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:

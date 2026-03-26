@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Modal from "@leafygreen-ui/modal";
 import { H3, Body } from "@leafygreen-ui/typography";
 import Icon from "@leafygreen-ui/icon";
@@ -9,6 +9,8 @@ import Button from "@leafygreen-ui/button";
 import { Tabs, Tab } from "@leafygreen-ui/tabs";
 import { TALK_TRACK } from "@/lib/const/talkTrack";
 
+const STORAGE_KEY = "mee_wizard_seen";
+
 const InfoWizard = ({
   tooltipText = "Learn more",
   iconGlyph = "Wizard",
@@ -16,6 +18,14 @@ const InfoWizard = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(0);
+
+  // Auto-open on first visit
+  useEffect(() => {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      setOpen(true);
+      localStorage.setItem(STORAGE_KEY, "1");
+    }
+  }, []);
 
   return (
     <>

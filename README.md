@@ -11,28 +11,7 @@ A MongoDB-powered demo that lets you explore a dataset of autonomous driving eve
 
 ## High Level Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Browser                             │
-│  Next.js 15 (App Router)  ·  LeafyGreen UI                  │
-│  SearchBar · ResultsGrid · ChatPanel (SSE streaming)        │
-└───────────────────────┬─────────────────────────────────────┘
-                        │ HTTP / SSE
-┌───────────────────────▼─────────────────────────────────────┐
-│                    FastAPI Backend                           │
-│  /api/search  (hybrid search · reranker)                    │
-│  /api/chat/stream  (ReAct agent · SSE)                      │
-│  /api/chat/approve (Human-in-the-Loop)                      │
-│  /api/tools   (tool discovery registry)                     │
-└──────┬────────────────┬──────────────────┬──────────────────┘
-       │                │                  │
-┌──────▼──────┐  ┌──────▼──────┐  ┌───────▼───────┐
-│  MongoDB    │  │  AWS Bedrock│  │   Voyage AI   │
-│  Atlas      │  │  Claude 3   │  │  Embeddings + │
-│  (Vector +  │  │  (LLM +     │  │  Reranker     │
-│  Text Search│  │   Agent)    │  │               │
-└─────────────┘  └─────────────┘  └───────────────┘
-```
+![Architecture](arch.png)
 
 ## Tech Stack
 

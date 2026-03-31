@@ -44,52 +44,25 @@ steps:
       event:
         - push
 
-  - name: deploy-backend-staging
+  - name: deploy-staging
     image: public.ecr.aws/kanopy/drone-helm:v3
     settings:
       chart: mongodb/web-app
       chart_version: 4.30.0
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: industrysolutions
-      release: manu-multimodal-event-explorer-backend
-      values:
-        - "image.tag=git-${DRONE_COMMIT_SHA:0:7}"
-        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/manu-multimodal-event-explorer-backend"
-        - "ingress.enabled=true"
-        - "ingress.hosts[0]=manu-multimodal-event-explorer-backend.industrysolutions.staging.corp.mongodb.com"
-        - "mesh.enabled=true"
-        # Backend resources (reduced defaults for demos - increase if OOMKilled)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=100m"
-        - "resources.requests.memory=256Mi"
-      api_server: https://api.staging.corp.mongodb.com
-      kubernetes_token:
-        from_secret: staging_kubernetes_token
-      values_files: [ "environment/staging.yaml" ]
-    when:
-      event:
-        - push
-
-  - name: deploy-frontend-staging
-    image: public.ecr.aws/kanopy/drone-helm:v3
-    settings:
-      chart: mongodb/web-app
-      chart_version: 4.30.0
-      add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: industrysolutions
-      release: manu-multimodal-event-explorer-frontend
+      release: manu-multimodal-event-explorer
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}"
         - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/manu-multimodal-event-explorer-frontend"
         - "ingress.enabled=true"
-        - "ingress.hosts[0]=manu-multimodal-event-explorer-frontend.industrysolutions.staging.corp.mongodb.com"
+        - "ingress.hosts[0]=manu-multimodal-event-explorer.industrysolutions.staging.corp.mongodb.com"
         - "mesh.enabled=true"
-        # Frontend resources (reduced defaults for demos - increase if OOMKilled)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=100m"
-        - "resources.requests.memory=256Mi"
+        # Combined resources for multi-container pod
+        - "resources.limits.cpu=1000m"
+        - "resources.limits.memory=1Gi"
+        - "resources.requests.cpu=200m"
+        - "resources.requests.memory=512Mi"
       api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
         from_secret: staging_kubernetes_token
@@ -144,52 +117,25 @@ steps:
       event:
         - push
 
-  - name: deploy-backend-production
+  - name: deploy-production
     image: public.ecr.aws/kanopy/drone-helm:v3
     settings:
       chart: mongodb/web-app
       chart_version: 4.30.0
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: industrysolutions
-      release: manu-multimodal-event-explorer-backend-prod
-      values:
-        - "image.tag=git-${DRONE_COMMIT_SHA:0:7}-prod"
-        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/manu-multimodal-event-explorer-backend-prod"
-        - "ingress.enabled=true"
-        - "ingress.hosts[0]=manu-multimodal-event-explorer-backend.industrysolutions.prod.corp.mongodb.com"
-        - "mesh.enabled=true"
-        # Backend resources (production - slightly higher for reliability)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=150m"
-        - "resources.requests.memory=256Mi"
-      api_server: https://api.prod.corp.mongodb.com
-      kubernetes_token:
-        from_secret: prod_kubernetes_token
-      values_files: [ "environment/production.yaml" ]
-    when:
-      event:
-        - push
-
-  - name: deploy-frontend-production
-    image: public.ecr.aws/kanopy/drone-helm:v3
-    settings:
-      chart: mongodb/web-app
-      chart_version: 4.30.0
-      add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: industrysolutions
-      release: manu-multimodal-event-explorer-frontend-prod
+      release: manu-multimodal-event-explorer-prod
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}-prod"
         - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/manu-multimodal-event-explorer-frontend-prod"
         - "ingress.enabled=true"
-        - "ingress.hosts[0]=manu-multimodal-event-explorer-frontend.industrysolutions.prod.corp.mongodb.com"
+        - "ingress.hosts[0]=manu-multimodal-event-explorer.industrysolutions.prod.corp.mongodb.com"
         - "mesh.enabled=true"
-        # Frontend resources (production - slightly higher for reliability)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=150m"
-        - "resources.requests.memory=256Mi"
+        # Combined resources for multi-container pod (production)
+        - "resources.limits.cpu=1000m"
+        - "resources.limits.memory=1Gi"
+        - "resources.requests.cpu=300m"
+        - "resources.requests.memory=512Mi"
       api_server: https://api.prod.corp.mongodb.com
       kubernetes_token:
         from_secret: prod_kubernetes_token

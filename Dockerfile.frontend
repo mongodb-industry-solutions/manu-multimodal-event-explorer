@@ -4,5 +4,8 @@ COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ .
 RUN npm run build
+# Environment variable for port - Next.js will use this automatically
+ENV PORT=8080
+# Tell Docker about the port we'll run on
 EXPOSE 8080
 CMD ["npm", "start"]

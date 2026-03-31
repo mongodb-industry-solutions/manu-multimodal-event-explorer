@@ -2,49 +2,85 @@ env:
   NODE_ENV: prod
   # AWS region for IRSA (no credentials needed)
   AWS_REGION: us-east-1
-  # Backend API URL for frontend to connect to backend (separate pods deployment)
-  BACKEND_URL: http://manu-multimodal-event-explorer-backend-prod-web-app:80
+  # Backend API URL for frontend to connect to backend (multi-container localhost)
+  BACKEND_URL: http://localhost:8000
   # Database collection name
   COLLECTION_NAME: events
-  # CORS origins (restrict to known production domains)
-  ORIGINS: "https://manu-multimodal-event-explorer-frontend.industrysolutions.prod.corp.mongodb.com,https://manu-multimodal-event-explorer-backend.industrysolutions.prod.corp.mongodb.com"
+  # CORS origins (single URL for multi-container deployment)
+  ORIGINS: "https://manu-multimodal-event-explorer.industrysolutions.prod.corp.mongodb.com"
   # App name for MongoDB connection tracking
   APP_NAME: multimodal-event-explorer
 
-## Single Pod Containers
-envSecrets:
-  # MongoDB Configuration
-  MONGODB_URI: manu-multimodal-secrets-prod
-  DATABASE_NAME: manu-multimodal-secrets-prod
-  VOYAGE_API_KEY: manu-multimodal-secrets-prod
-  # Bedrock Inference Profiles (see cloud-cost-tracking.md)
-  CHATCOMPLETIONS_MODEL_ID: manu-multimodal-secrets-prod
-  EMBEDDINGS_MODEL_ID: manu-multimodal-secrets-prod
+## Single Pod Containers (not used in multi-container mode)
+# envSecrets:
+#   # MongoDB Configuration
+#   MONGODB_URI: manu-multimodal-secrets-prod
+#   DATABASE_NAME: manu-multimodal-secrets-prod
+#   VOYAGE_API_KEY: manu-multimodal-secrets-prod
+#   # Bedrock Inference Profiles (see cloud-cost-tracking.md)
+#   CHATCOMPLETIONS_MODEL_ID: manu-multimodal-secrets-prod
+#   EMBEDDINGS_MODEL_ID: manu-multimodal-secrets-prod
   
-## should be used in case of multi-pod container i.e: both frontend and backend in one pod
-# sidecarContainers:
-#   - name: backend
-#     image: 275662791714.dkr.ecr.us-east-1.amazonaws.com/kanopy-session-backend:latest
-#     env:
-#       # MongoDB connection (from Kubernetes secret)
-#       - name: MONGODB_URI
-#         valueFrom:
-#           secretKeyRef:
-#             name: session-temp-kanopy
-#             key: MONGODB_URI
+## Multi-container pod with backend as sidecar
+sidecarContainers:
+  - name: backend
+    image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/manu-multimodal-event-explorer-backend-prod:prod-latest
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 150m
+        memory: 256Mi
+    env:
+      # MongoDB connection (from Kubernetes secret)
+      - name: MONGODB_URI
+        valueFrom:
+          secretKeyRef:
+            name: manu-multimodal-secrets-prod
+            key: MONGODB_URI
 
-#       - name: DATABASE_NAME
-#         valueFrom:
-#           secretKeyRef:
-#             name: session-temp-kanopy
-#             key: DATABASE_NAME
+      - name: DATABASE_NAME
+        valueFrom:
+          secretKeyRef:
+            name: manu-multimodal-secrets-prod
+            key: DATABASE_NAME
 
-#       # Voyage AI API Key (embeddings)
-#       - name: VOYAGE_API_KEY
-#         valueFrom:
-#           secretKeyRef:
-#             name: session-temp-kanopy
-#             key: VOYAGE_API_KEY
+      # Voyage AI API Key (embeddings)
+      - name: VOYAGE_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: manu-multimodal-secrets-prod
+            key: VOYAGE_API_KEY
+
+      # AWS Bedrock model IDs
+      - name: CHATCOMPLETIONS_MODEL_ID
+        valueFrom:
+          secretKeyRef:
+            name: manu-multimodal-secrets-prod
+            key: CHATCOMPLETIONS_MODEL_ID
+
+      - name: EMBEDDINGS_MODEL_ID
+        valueFrom:
+          secretKeyRef:
+            name: manu-multimodal-secrets-prod
+            key: EMBEDDINGS_MODEL_ID
+
+      # AWS Region for Bedrock
+      - name: AWS_REGION
+        value: "us-east-1"
+
+      # Collection name
+      - name: COLLECTION_NAME
+        value: "events"
+
+      # App name
+      - name: APP_NAME
+        value: "multimodal-event-explorer"
+
+      # CORS origins for backend
+      - name: ORIGINS
+        value: "https://manu-multimodal-event-explorer.industrysolutions.prod.corp.mongodb.com"
 
 ## ----------------------------- Cloud Specific Configurations (For AWS only line 42 to 46 needed)-----------------------------
 

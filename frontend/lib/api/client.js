@@ -2,7 +2,8 @@
  * API client for the Multimodal Event Explorer backend.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Empty string means use relative URLs (for multi-container pod setup)
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 /**
  * Make a fetch request with error handling.

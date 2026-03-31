@@ -8,11 +8,16 @@ from fastapi.responses import FileResponse, RedirectResponse
 
 from models.domain import Domain
 from services.mongodb_service import MongoDBEventsService
+from services.s3_service import S3Service
 
 router = APIRouter(prefix="/api/images", tags=["images"])
 
-# Initialize service
+# Initialize services
 mongodb_service = MongoDBEventsService()
+
+# S3 service (only if S3 storage is enabled)
+USE_S3 = os.getenv("USE_S3_STORAGE", "false").lower() == "true"
+s3_service = S3Service() if USE_S3 else None
 
 # Base directory for images
 IMAGES_BASE_DIR = Path(__file__).parent.parent / "data" / "images"
@@ -53,9 +58,22 @@ async def get_image_by_event_id(
         
         raise HTTPException(status_code=404, detail=f"Image not found for event: {event_id}")
     
-    # Phase 2: If image_url is set, redirect to S3
-    if event.image_url:
-        return RedirectResponse(url=event.image_url)
+    # Phase 2: If image_url is set (S3), generate presigned URL
+    if event.image_url and USE_S3 and s3_service:
+        # Extract S3 key from URL (e.g., "adas/mist_00001.jpg")
+        # URL format: https://bucket.s3.region.amazonaws.com/key
+        try:
+            s3_key = event.image_url.split('.amazonaws.com/')[-1]
+            presigned_url = s3_service.generate_presigned_url(
+                s3_key=s3_key,
+                expiration=86400  # 24 hours
+            )
+            if presigned_url:
+                return RedirectResponse(url=presigned_url)
+            else:
+                raise HTTPException(status_code=500, detail="Failed to generate presigned URL")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error generating presigned URL: {str(e)}")
     
     # Phase 1: Serve from local filesystem
     image_path = IMAGES_BASE_DIR / event.image_path

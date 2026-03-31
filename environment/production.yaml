@@ -4,12 +4,18 @@ env:
   AWS_REGION: us-east-1
   # Backend API URL for frontend to connect to backend (multi-container localhost)
   BACKEND_URL: http://localhost:8000
+  # Next.js public API URL (required for browser-side fetches)
+  NEXT_PUBLIC_API_URL: http://localhost:8000
   # Database collection name
   COLLECTION_NAME: events
   # CORS origins (single URL for multi-container deployment)
   ORIGINS: "https://manu-multimodal-event-explorer.industrysolutions.prod.corp.mongodb.com"
   # App name for MongoDB connection tracking
   APP_NAME: multimodal-event-explorer
+  # S3 configuration for image storage
+  S3_BUCKET_NAME: manu-multimodal-event-explorer-images-prod
+  S3_REGION: us-east-1
+  USE_S3_STORAGE: "true"
 
 ## Single Pod Containers (not used in multi-container mode)
 # envSecrets:

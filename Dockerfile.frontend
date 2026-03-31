@@ -3,6 +3,8 @@ WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ .
+# Set NEXT_PUBLIC env var for build time (multi-container uses localhost:8000)
+ENV NEXT_PUBLIC_API_URL=http://localhost:8000
 RUN npm run build
 # Environment variable for port - Next.js will use this automatically
 ENV PORT=8080

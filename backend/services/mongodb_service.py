@@ -441,6 +441,56 @@ class MongoDBEventsService:
         except Exception as e:
             logger.error(f"Error getting filter values: {e}")
             return {}
+    
+    def get_all_events(self, domain: str = "adas") -> List[Event]:
+        """Get all events for a domain.
+        
+        Args:
+            domain: Domain identifier
+            
+        Returns:
+            List of all events
+        """
+        collection = self._get_collection(domain)
+        if collection is None:
+            return []
+        
+        try:
+            docs = collection.find({})
+            return [Event.from_mongo_doc(doc) for doc in docs]
+        except Exception as e:
+            logger.error(f"Error getting all events: {e}")
+            return []
+    
+    def update_event_image_url(
+        self,
+        event_id: str,
+        domain: str,
+        image_url: str
+    ) -> bool:
+        """Update an event's image_url field (for S3 migration).
+        
+        Args:
+            event_id: Event identifier
+            domain: Domain identifier
+            image_url: S3 URL for the image
+            
+        Returns:
+            True if successful
+        """
+        collection = self._get_collection(domain)
+        if collection is None:
+            return False
+        
+        try:
+            result = collection.update_one(
+                {"event_id": event_id},
+                {"$set": {"image_url": image_url}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            logger.error(f"Error updating image_url for {event_id}: {e}")
+            return False
 
 
 # Example usage

@@ -15,6 +15,13 @@ setup-hooks.sh
 .drone-multicontainer-pods.yml
 .drone-seperate-pods.yml
 
+# Documentation (generated for local reference)
+DEPLOYMENT_GUIDE.md
+SETUP_STATUS.md
+S3_MIGRATION_PLAN.md
+DEPLOYMENT_CHECKLIST.md
+QUICK_START_DEPLOY.md
+
 # claude
 **/.claude
 

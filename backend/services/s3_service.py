@@ -46,7 +46,7 @@ class S3Service:
         s3_key: str,
         content_type: str = "image/jpeg"
     ) -> Optional[str]:
-        """Upload an image to S3 with public-read ACL.
+        """Upload an image to S3 with private access (use presigned URLs).
         
         Args:
             local_path: Path to local image file
@@ -61,7 +61,7 @@ class S3Service:
                 logger.error(f"Local file not found: {local_path}")
                 return None
             
-            # Upload file with public-read ACL (simple demo approach)
+            # Upload file as private (no ACL - uses bucket default)
             self.s3_client.upload_file(
                 str(local_path),
                 self.bucket_name,
@@ -69,11 +69,11 @@ class S3Service:
                 ExtraArgs={
                     'ContentType': content_type,
                     'CacheControl': 'max-age=31536000',  # 1 year cache
-                    'ACL': 'public-read'  # Make object publicly readable
+                    'ServerSideEncryption': 'AES256'  # Encrypt at rest
                 }
             )
             
-            # Construct S3 URL
+            # Construct S3 URL (for reference only - not publicly accessible)
             s3_url = f"https://{self.bucket_name}.s3.{self.region}.amazonaws.com/{s3_key}"
             
             logger.info(f"Uploaded {local_path.name} to S3: {s3_key}")
@@ -141,3 +141,32 @@ class S3Service:
         except ClientError as e:
             logger.error(f"Failed to delete {s3_key} from S3: {e}")
             return False
+    
+    def generate_presigned_url(
+        self,
+        s3_key: str,
+        expiration: int = 3600
+    ) -> Optional[str]:
+        """Generate a presigned URL for secure access to a private S3 object.
+        
+        Args:
+            s3_key: S3 object key (e.g., "adas/mist_00001.jpg")
+            expiration: URL expiration time in seconds (default: 1 hour)
+            
+        Returns:
+            Presigned URL if successful, None otherwise
+        """
+        try:
+            url = self.s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': self.bucket_name,
+                    'Key': s3_key
+                },
+                ExpiresIn=expiration
+            )
+            logger.debug(f"Generated presigned URL for {s3_key} (expires in {expiration}s)")
+            return url
+        except ClientError as e:
+            logger.error(f"Failed to generate presigned URL for {s3_key}: {e}")
+            return None

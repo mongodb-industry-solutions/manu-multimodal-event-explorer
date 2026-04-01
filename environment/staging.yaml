@@ -16,6 +16,7 @@ env:
   S3_BUCKET_NAME: manu-multimodal-event-explorer-images-staging
   S3_REGION: us-east-1
   USE_S3_STORAGE: "true"
+  CLOUDFRONT_DOMAIN: d15isiqwg45u7d.cloudfront.net
 
 ## Single Pod Containers (not used in multi-container mode)
 # envSecrets:
@@ -87,6 +88,19 @@ sidecarContainers:
       # CORS origins for backend
       - name: ORIGINS
         value: "https://manu-multimodal-event-explorer.industrysolutions.staging.corp.mongodb.com,http://localhost:3000"
+
+      # S3 configuration for image storage
+      - name: S3_BUCKET_NAME
+        value: "manu-multimodal-event-explorer-images-staging"
+      
+      - name: S3_REGION
+        value: "us-east-1"
+      
+      - name: USE_S3_STORAGE
+        value: "true"
+      
+      - name: CLOUDFRONT_DOMAIN
+        value: "d15isiqwg45u7d.cloudfront.net"
     
 ## ----------------------------- Cloud Specific Configurations -----------------------------
 

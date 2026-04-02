@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Body, H3, Label } from '@leafygreen-ui/typography';
 import { palette } from '@leafygreen-ui/palette';
+import { streamChatEvents } from '../../lib/stream/chat';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Use relative URLs for API calls - Next.js will proxy to backend
+const API_BASE_URL = '';
 
 const SUGGESTED_QUESTIONS = [
   { text: 'What are the rarest events in this dataset?' },
@@ -262,7 +264,7 @@ export default function ChatPanel({ open, onClose, onAgentSearch }) {
     setLiveTrace([]);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+      const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: apiMessages }),
@@ -270,59 +272,40 @@ export default function ChatPanel({ open, onClose, onAgentSearch }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `HTTP ${res.status}`);
+        throw new Error(err.error || err.detail || `HTTP ${res.status}`);
       }
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop(); // hold incomplete line
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
-          try {
-            const event = JSON.parse(data);
-            if (event.type === 'trace') {
-              liveTraceRef.current = [...liveTraceRef.current, event.entry];
-              setLiveTrace([...liveTraceRef.current]);
-              // Mirror search_events calls into the main search panel
-              if (
-                event.entry?.type === 'tool_call' &&
-                event.entry?.name === 'search_events' &&
-                event.entry?.input?.query &&
-                typeof onAgentSearch === 'function'
-              ) {
-                onAgentSearch({ query: event.entry.input.query });
-              }
-            } else if (event.type === 'approval_required') {
-              // HITL: agent is paused — show approval card, stream is blocked on backend
-              setPendingApproval({
-                approval_key: event.approval_key,
-                tool_name: event.tool_name,
-                tool_input: event.tool_input,
-              });
-            } else if (event.type === 'response') {
-              setPendingApproval(null);
-              setMessages(prev => [
-                ...prev,
-                { role: 'assistant', content: event.content, trace: liveTraceRef.current },
-              ]);
-              liveTraceRef.current = [];
-              setLiveTrace([]);
-            } else if (event.type === 'error') {
-              throw new Error(event.message);
-            }
-          } catch (parseErr) {
-            // ignore malformed SSE lines
+      // Use NDJSON streaming instead of SSE
+      for await (const event of streamChatEvents(res.body)) {
+        if (event.type === 'trace') {
+          liveTraceRef.current = [...liveTraceRef.current, event.entry];
+          setLiveTrace([...liveTraceRef.current]);
+          // Mirror search_events calls into the main search panel
+          if (
+            event.entry?.type === 'tool_call' &&
+            event.entry?.name === 'search_events' &&
+            event.entry?.input?.query &&
+            typeof onAgentSearch === 'function'
+          ) {
+            onAgentSearch({ query: event.entry.input.query });
           }
+        } else if (event.type === 'approval_required') {
+          // HITL: agent is paused — show approval card, stream is blocked on backend
+          setPendingApproval({
+            approval_key: event.approval_key,
+            tool_name: event.tool_name,
+            tool_input: event.tool_input,
+          });
+        } else if (event.type === 'response') {
+          setPendingApproval(null);
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: event.content, trace: liveTraceRef.current },
+          ]);
+          liveTraceRef.current = [];
+          setLiveTrace([]);
+        } else if (event.type === 'error') {
+          throw new Error(event.message);
         }
       }
     } catch (err) {
@@ -341,7 +324,7 @@ export default function ChatPanel({ open, onClose, onAgentSearch }) {
     // Clear the card immediately so the UI feels responsive
     setPendingApproval(null);
     try {
-      await fetch(`${API_BASE_URL}/api/chat/approve`, {
+      await fetch('/api/chat/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approval_key, approved }),

@@ -4,8 +4,9 @@ env:
   AWS_REGION: us-east-1
   # Backend API URL for frontend to connect to backend (multi-container localhost)
   BACKEND_URL: http://localhost:8000
-  # Next.js public API URL (required for browser-side fetches)
-  NEXT_PUBLIC_API_URL: http://localhost:8000
+  # Next.js public API URL - empty string forces relative URLs for browser-side fetches
+  # In multi-container deployment, frontend proxies /api/* to backend on localhost:8000
+  NEXT_PUBLIC_API_URL: ""
   # Database collection name
   COLLECTION_NAME: events
   # CORS origins (single URL for multi-container deployment)

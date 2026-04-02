@@ -64,7 +64,7 @@ export default function Home() {
           'spring night rural road',
         ]);
         setFilterOptions({
-          season: ['spring', 'summer', 'fall'],
+          season: ['spring', 'summer', 'fall', 'winter'],
           time_of_day: ['dawn', 'day', 'dusk', 'night'],
           weather: ['clear', 'overcast'],
         });

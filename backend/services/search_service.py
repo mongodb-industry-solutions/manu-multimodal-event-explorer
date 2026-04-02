@@ -52,8 +52,23 @@ class SearchService:
         return self.db[domain_config.collection_name]
     
     def _build_filter(self, request: SearchRequest) -> Dict[str, Any]:
-        """Build MongoDB filter from search request."""
+        """Build MongoDB filter from search request.
+        
+        Returns filter for use in $match stages (includes domain).
+        For $vectorSearch filter parameter, use _build_vector_filter().
+        """
         filter_doc = {"domain": request.domain}
+        if request.season:
+            filter_doc["metadata.season"] = request.season
+        if request.time_of_day:
+            filter_doc["metadata.time_of_day"] = request.time_of_day
+        if request.weather:
+            filter_doc["metadata.weather"] = request.weather
+        return filter_doc
+    
+    def _build_vector_filter(self, request: SearchRequest) -> Dict[str, Any]:
+        """Build filter specifically for $vectorSearch (metadata fields only)."""
+        filter_doc = {}
         if request.season:
             filter_doc["metadata.season"] = request.season
         if request.time_of_day:
@@ -81,6 +96,9 @@ class SearchService:
         if collection is None:
             return [], {}, 0
         
+        # Separate filters: vector search only supports metadata fields
+        vector_filter = {k: v for k, v in (filter_doc or {}).items() if k.startswith("metadata.")}
+        
         # Build vector search pipeline
         vector_pipeline = [
             {
@@ -90,7 +108,7 @@ class SearchService:
                     "queryVector": query_embedding,
                     "numCandidates": limit * 10,
                     "limit": limit * 2,
-                    **({"filter": filter_doc} if filter_doc else {})
+                    **({"filter": vector_filter} if vector_filter else {})
                 }
             }
         ]
@@ -109,6 +127,11 @@ class SearchService:
             },
             {"$limit": limit * 2}
         ]
+        
+        # Apply metadata filters to text search results with $match
+        # (Atlas Search doesn't support pre-filtering, so we filter post-search)
+        if filter_doc:
+            text_pipeline.insert(1, {"$match": filter_doc})
         
         # $rankFusion pipeline
         pipeline = [

@@ -135,6 +135,10 @@ steps:
         - "ingress.enabled=true"
         - "ingress.hosts[0]=manu-multimodal-event-explorer.industrysolutions.prod.corp.mongodb.com"
         - "mesh.enabled=true"
+        # Disable nginx buffering for SSE streaming (HITL approval flow)
+        - "ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/proxy-buffering=off"
+        - "ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/proxy-read-timeout=\"300\""
+        - "ingress.annotations.nginx\\.ingress\\.kubernetes\\.io/proxy-send-timeout=\"300\""
         # Combined resources for multi-container pod (production)
         - "resources.limits.cpu=1000m"
         - "resources.limits.memory=1Gi"

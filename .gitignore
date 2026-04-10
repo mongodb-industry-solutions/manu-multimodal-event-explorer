@@ -16,7 +16,6 @@ KANOPY_DEPLOYMENT_README.md
 .drone-seperate-pods.yml
 
 # Documentation (generated for local reference)
-README.md
 cloud-cost-tracking.md
 DEPLOYMENT_GUIDE.md
 SETUP_STATUS.md

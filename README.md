@@ -111,6 +111,38 @@ uv run python services/ingestion_pipeline.py --sample-size 500
 
 ---
 
+## Image Storage
+
+After ingestion, images are saved to `backend/data/images/adas/` and served directly by the backend. This works fine for local development.
+
+For shared or deployed environments, you can migrate images to S3 + CloudFront instead. The app automatically uses the `image_url` field stored in MongoDB when it is present, so no code changes are needed — just run the migration.
+
+**Option A — Local (default)**
+
+No extra setup. Images are served from the backend filesystem.
+
+**Option B — S3 + CloudFront**
+
+1. Create the S3 bucket (edit the variables at the top of the script to match your AWS account and region):
+   ```bash
+   bash scripts/create-s3-buckets-simple.sh
+   ```
+
+2. Upload images and update MongoDB from the `backend/` directory:
+   ```bash
+   uv run python services/s3_migration.py
+   ```
+   This uploads each image, and writes the CloudFront URL back to `image_url` in each MongoDB document.
+
+3. Add to `backend/.env`:
+   ```env
+   S3_BUCKET_NAME=your-bucket-name
+   S3_REGION=us-east-1
+   CLOUDFRONT_DOMAIN=your-cf-domain.cloudfront.net
+   ```
+
+---
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:

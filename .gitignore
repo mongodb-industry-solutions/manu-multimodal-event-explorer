@@ -11,16 +11,20 @@ setup-hooks.sh
 
 # Kanopy
 
-./KANOPY_DEPLOYMENT_README.md
+KANOPY_DEPLOYMENT_README.md
 .drone-multicontainer-pods.yml
 .drone-seperate-pods.yml
 
 # Documentation (generated for local reference)
+README.md
+cloud-cost-tracking.md
 DEPLOYMENT_GUIDE.md
 SETUP_STATUS.md
 S3_MIGRATION_PLAN.md
 DEPLOYMENT_CHECKLIST.md
 QUICK_START_DEPLOY.md
+backend/README.md
+frontend/README.md
 
 # claude
 **/.claude

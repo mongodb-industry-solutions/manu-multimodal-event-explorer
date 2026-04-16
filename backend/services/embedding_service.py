@@ -27,7 +27,7 @@ class EmbeddingService:
     """
     
     # Voyage AI multimodal model
-    MULTIMODAL_MODEL = "voyage-multimodal-3"
+    MULTIMODAL_MODEL = "voyage-multimodal-3.5"
     TEXT_MODEL = "voyage-3"
     EMBEDDING_DIMENSIONS = 1024
     
@@ -127,27 +127,30 @@ class EmbeddingService:
             return None
     
     def embed_text(self, text: str) -> Optional[List[float]]:
-        """Generate embedding for text.
-        
+        """Generate embedding for a text query using the multimodal model.
+
+        Using multimodal_embed() ensures the query vector lives in the same
+        embedding space as the image embeddings stored in MongoDB, which is
+        required for cosine similarity to be meaningful.
+
         Args:
             text: Text to embed
-            
+
         Returns:
             Embedding vector as list of floats, or None on error
         """
         if not self.client:
             logger.error("Voyage AI client not initialized")
             return None
-        
+
         try:
-            result = self.client.embed(
-                texts=[text],
-                model=self.TEXT_MODEL
+            result = self.client.multimodal_embed(
+                inputs=[[text]],
+                model=self.MULTIMODAL_MODEL
             )
-            
-            self._total_tokens += result.total_tokens
+
             return result.embeddings[0]
-            
+
         except Exception as e:
             logger.error(f"Error generating text embedding: {e}")
             return None

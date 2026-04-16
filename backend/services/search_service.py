@@ -340,7 +340,7 @@ class SearchService:
             
             executed_queries["embedding"] = {
                 "service": "Voyage AI",
-                "model": "voyage-3",
+                "model": "voyage-multimodal-3.5",
                 "dimensions": 1024,
                 "time_ms": timing.embedding_ms
             }

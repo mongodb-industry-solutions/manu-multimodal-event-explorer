@@ -19,7 +19,7 @@ A MongoDB-powered demo that lets you explore a dataset of autonomous driving eve
 - [MongoDB Atlas](https://www.mongodb.com/atlas/database) — Vector Search, Atlas Search, aggregations
 - [FastAPI](https://fastapi.tiangolo.com/) for the Python backend
 - [AWS Bedrock](https://aws.amazon.com/bedrock/) — Claude 3 Haiku for the AI agent
-- [Voyage AI](https://www.voyageai.com/) — `voyage-multimodal-3` for embeddings, `rerank-2` for reranking
+- [Voyage AI](https://www.voyageai.com/) — `voyage-multimodal-3.5` for embeddings, `rerank-2` for reranking
 - [uv](https://docs.astral.sh/uv/) for Python dependency management
 - [LeafyGreen UI](https://www.mongodb.design/) for MongoDB-branded React components
 
@@ -51,7 +51,7 @@ The pipeline will:
 1. Stream images from HuggingFace (no full download required)
 2. Apply diversity gating — caps each weather/season/time-of-day combination so you get a balanced sample across conditions
 3. Save images locally to `backend/data/images/adas/`
-4. Generate multimodal embeddings via Voyage AI (`voyage-multimodal-3`)
+4. Generate multimodal embeddings via Voyage AI (`voyage-multimodal-3.5`)
 5. Insert documents and create Vector Search + Atlas Search indexes in MongoDB
 
 **Optional — preview which conditions will be sampled before touching any images:**

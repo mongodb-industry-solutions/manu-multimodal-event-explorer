@@ -10,7 +10,7 @@ class EmbeddingMetadata(BaseModel):
     dimensions: int = 1024
     original_bytes: int = 4096  # 1024 dims × 4 bytes (float32)
     quantized_bytes: int = 1024  # 1024 dims × 1 byte (int8)
-    model: str = "voyage-multimodal-3"
+    model: str = "voyage-multimodal-3.5"
 
 
 class EventMetadata(BaseModel):

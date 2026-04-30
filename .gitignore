@@ -5,6 +5,9 @@ knowledge_base_kanopy/
 security_check.sh
 SECURITY_CHECK_README.md
 
+# S3 setup scripts (contain env-specific config — use .example as template)
+scripts/create-s3-buckets-simple.sh
+
 # Git hooks (included in template, ignored in derived repos)
 setup-hooks.sh
 .githooks/

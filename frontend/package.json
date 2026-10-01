@@ -26,7 +26,7 @@
     "@leafygreen-ui/tooltip": "^14.3.1",
     "@leafygreen-ui/typography": "^22.2.4",
     "dotenv": "^17.2.2",
-    "next": "^15.5.7",
+    "next": "^15.5.27",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },
@@ -34,8 +34,12 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint-config-next": "^15.5.27",
     "license-checker": "^25.0.1",
     "tailwindcss": "^4"
+  },
+  "overrides": {
+    "sharp": "^0.35.4",
+    "postcss": "^8.5.23"
   }
 }

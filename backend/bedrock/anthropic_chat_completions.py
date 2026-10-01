@@ -34,10 +34,10 @@ class BedrockAnthropicChatCompletions(BedrockClient):
             aws_secret_key (str): The AWS secret key.
             region_name (str): The AWS region name. Default is os.getenv("AWS_REGION").
             model_id (str): The model ID or inference profile ARN to use.
-                            Reads from CHATCOMPLETIONS_MODEL_ID env var, falls back to Claude 3 Haiku.
+                            Reads from CHATCOMPLETIONS_MODEL_ID env var, falls back to Claude Haiku 4.5.
             bedrock_client (BedrockClient): The BedrockClient instance.
         """
-        self.model_id = model_id or os.getenv("CHATCOMPLETIONS_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0")
+        self.model_id = model_id or os.getenv("CHATCOMPLETIONS_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
         self.bedrock_client = self._get_bedrock_client()
 
     def predict(self, text: str):

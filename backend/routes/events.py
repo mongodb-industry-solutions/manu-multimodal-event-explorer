@@ -46,7 +46,7 @@ async def list_events(
     This is a simple listing endpoint for browsing without search.
     """
     collection = mongodb_service._get_collection(domain)
-    if not collection:
+    if collection is None:
         raise HTTPException(status_code=400, detail=f"Invalid domain: {domain}")
     
     # Build filter

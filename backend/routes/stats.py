@@ -64,7 +64,7 @@ async def get_summary():
             summaries.append({
                 "domain_id": domain_config.id,
                 "domain_name": domain_config.name,
-                "icon": domain_config.icon,
+                "icon": getattr(domain_config, "icon", None),
                 "document_count": stats.get("document_count", 0),
                 "vector_storage": stats.get("vector_storage", {})
             })
